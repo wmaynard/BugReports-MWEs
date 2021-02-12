@@ -1,0 +1,74 @@
+<!-- 
+	2021-02-12
+	Chrome CSS font-face Delay Bug - Minimum Working Example
+	Will Maynard
+
+	Software Information:
+	Chrome Version 88.0.4324.150 (Official Build) (x86_64)
+	MacOS Big Sur Version 11.2
+
+	Description:
+	When using font-face to use fonts not installed on the local system, there is a
+	delay in when the CSS styling is applied.  The properties scrollWidth and scrollHeight,
+	in particular, cannot accurately measure elements because of this delay.
+
+	In the project I discovered this on, the delay consistently took betwen 200-300ms.
+	In this MWE, it takes between 15-30ms (measuring in console.log is not accurate, though).
+
+	This appears to happen with any given font, not just Roboto.
+
+	It may be necessary to adjust the 'ms' variable to see the console output.
+
+	Reproduction Steps:
+	1.	With the Roboto font installed on the local machine, open MWE.html in Chrome.  The 
+		yellow div should not have any overflowing text.
+	2.	Uncomment the @font-face rule.
+	3.	Reload MWE.html.  The yellow div has text overflow.
+ -->
+<html>
+	<head>
+		<style>
+/* @font-face {
+	font-family: "Roboto";
+	src: url("Roboto.ttf");
+} */
+div#fillMe {
+	font: 11pt "Roboto";
+	width: 300px;
+	height: 300px;
+	background-color: lemonchiffon;
+}
+		</style>
+	</head>
+	<body>
+		<div id="fillMe"></div>
+	</body>
+	<script>
+		window.onload = function() {
+			var loremIpsum = "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?";
+			var div = document.getElementById("fillMe");
+
+			function IsOverflown(e) {	// Should return true when any text exceeds the yellow area of the div.
+				return e.scrollHeight > e.offsetHeight || e.scrollWidth > e.offsetWidth;
+			}
+
+			var words = loremIpsum.split(' ');			// Add Lorem Ipsum word-by-word to our div.
+			for (var i = 0; i < words.length; i++) {
+				div.previousText = div.innerText;
+				div.innerText += " " + words[i];
+				if (IsOverflown(div)) {					// Our div has overflown, so we should back out
+					div.innerText = div.previousText;	// Remove the previous word, since it caused the overflow.
+					break;
+				}
+			}
+			console.log("Is the div overflown after removing the last word?", IsOverflown(div));
+			var count = 0;
+			var ms = 10;
+			var stop = setInterval(function(){
+				console.log("Nothing changed.  Is the div overflown after " + ((count + 1) * ms) + "ms?", IsOverflown(div));
+				if (++count == 10)
+					clearInterval(stop);
+			}, ms);
+		};
+	</script>
+</html>
