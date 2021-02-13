@@ -1,4 +1,12 @@
 <!-- 
+	2021-02-13
+	Solution found:
+	1. Text must be loaded in elements that uses the font-face to start loading embedded fonts.
+	2. Load the div with every font you want to use first.  This div can be hidden.
+	3. Instead of using window.onload, use document.fonts.ready.
+
+	Thanks to Carl#7846 for the find.
+
 	2021-02-12
 	Chrome CSS font-face Delay Bug - Minimum Working Example
 	Will Maynard
@@ -28,10 +36,10 @@
 <html>
 	<head>
 		<style>
-/* @font-face {
+@font-face {
 	font-family: "Roboto";
 	src: url("Roboto.ttf");
-} */
+}
 div#fillMe {
 	font: 11pt "Roboto";
 	width: 300px;
@@ -41,12 +49,17 @@ div#fillMe {
 		</style>
 	</head>
 	<body>
-		<div id="fillMe"></div>
+		<div id="fillMe" style="visibility: hidden">
+			This has to have text in it from every font used before document.fonts.ready can be relied on.
+		</div>
 	</body>
 	<script>
-		window.onload = function() {
+		function loadContent() {
+			console.log("Load the content now.");
 			var loremIpsum = "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?";
 			var div = document.getElementById("fillMe");
+			div.innerHTML = "";
+			div.style.visibility = "visible";
 
 			function IsOverflown(e) {	// Should return true when any text exceeds the yellow area of the div.
 				return e.scrollHeight > e.offsetHeight || e.scrollWidth > e.offsetWidth;
@@ -63,12 +76,23 @@ div#fillMe {
 			}
 			console.log("Is the div overflown after removing the last word?", IsOverflown(div));
 			var count = 0;
-			var ms = 10;
+			var ms = 5;
 			var stop = setInterval(function(){
 				console.log("Nothing changed.  Is the div overflown after " + ((count + 1) * ms) + "ms?", IsOverflown(div));
 				if (++count == 10)
 					clearInterval(stop);
 			}, ms);
+		}
+		document.fonts.ready.then(function () {
+			loadContent();
+		});
+
+		document.fonts.onloadingdone = function (fontFaceSetEvent) {
+			console.log('onloadingdone we have ' + fontFaceSetEvent.fontfaces.length + ' font faces loaded');
+			// loadContent();		// The overflow still happens here.
+		};
+		window.onload = function() {
+			console.log("window.onload fired.");
 		};
 	</script>
 </html>
